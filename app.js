@@ -1,6 +1,5 @@
 let samples = [];
-
-const TEST_SECONDS = 60;
+const IDLE_PAUSE_MS = 8000;
 
 const targetTextEl = document.getElementById("targetText");
 const textStreamEl = document.getElementById("textStream");
@@ -20,7 +19,6 @@ let pinyinUnits = [];
 let timerId = null;
 let startedAt = null;
 let elapsedBeforePause = 0;
-let timeLeft = TEST_SECONDS;
 let committedTyped = 0;
 let committedCorrect = 0;
 let currentTyped = 0;
@@ -28,6 +26,8 @@ let currentCorrect = 0;
 let awaitingNextSpace = false;
 let hasArchivedCurrent = false;
 let completedParagraphCount = 0;
+let lastActivityAt = null;
+let isIdlePaused = false;
 
 function renderStatusText(message) {
   targetTextEl.innerHTML = "";
@@ -104,10 +104,9 @@ function getElapsedSeconds() {
   return Math.floor((elapsedBeforePause + runningMs) / 1000);
 }
 
-function refreshTimeLeft() {
+function refreshElapsedTime() {
   const elapsed = getElapsedSeconds();
-  timeLeft = Math.max(0, TEST_SECONDS - elapsed);
-  timeLeftEl.textContent = `${timeLeft}s`;
+  timeLeftEl.textContent = `${elapsed}s`;
 }
 
 function renderTarget() {
@@ -153,25 +152,26 @@ function renderTarget() {
   });
 
   targetTextEl.appendChild(pairGrid);
-  targetTextEl.classList.remove("enter");
-  void targetTextEl.offsetWidth;
-  targetTextEl.classList.add("enter");
 }
 
 function startTimer() {
-  if (timerId || timeLeft <= 0) {
+  if (timerId) {
     return;
   }
   if (startedAt == null) {
     startedAt = Date.now();
   }
+  if (lastActivityAt == null) {
+    lastActivityAt = Date.now();
+  }
 
   timerId = setInterval(() => {
-    refreshTimeLeft();
-
-    if (timeLeft === 0) {
-      finishTest();
+    if (lastActivityAt != null && Date.now() - lastActivityAt >= IDLE_PAUSE_MS) {
+      isIdlePaused = true;
+      pauseTimer();
+      return;
     }
+    refreshElapsedTime();
   }, 250);
 }
 
@@ -185,7 +185,7 @@ function pauseTimer() {
 }
 
 function canResumeTimer() {
-  return timeLeft > 0 && !typingInputEl.disabled && (elapsedBeforePause > 0 || startedAt != null);
+  return !isIdlePaused && !typingInputEl.disabled && (elapsedBeforePause > 0 || startedAt != null);
 }
 
 function resumeTimer() {
@@ -196,7 +196,7 @@ function resumeTimer() {
 }
 
 function calculateStats() {
-  const elapsedSeconds = Math.max(1, TEST_SECONDS - timeLeft);
+  const elapsedSeconds = Math.max(1, getElapsedSeconds());
   const elapsedMinutes = elapsedSeconds / 60;
   const totalTyped = committedTyped + currentTyped;
   const totalCorrect = committedCorrect + currentCorrect;
@@ -208,6 +208,14 @@ function calculateStats() {
   cpmEl.textContent = Number.isFinite(cpm) ? cpm : 0;
   wpmEl.textContent = Number.isFinite(wpm) ? wpm : 0;
   accuracyEl.textContent = `${Math.max(0, Math.min(100, accuracy))}%`;
+}
+
+function recordKeyboardActivity() {
+  lastActivityAt = Date.now();
+  if (isIdlePaused && !typingInputEl.disabled) {
+    isIdlePaused = false;
+    startTimer();
+  }
 }
 
 function updateTargetHighlight(input) {
@@ -298,6 +306,12 @@ function archiveCurrentResult() {
   const snapshot = targetTextEl.cloneNode(true);
   snapshot.classList.remove("enter");
   snapshot.querySelectorAll(".current").forEach((el) => el.classList.remove("current"));
+  const paragraphAccuracy = currentTyped === 0 ? 100 : Math.round((currentCorrect / currentTyped) * 100);
+  const clampedParagraphAccuracy = Math.max(0, Math.min(100, paragraphAccuracy));
+  const orderLine = snapshot.querySelector(".source-order");
+  if (orderLine) {
+    orderLine.textContent = `${orderLine.textContent} · 准确率 ${clampedParagraphAccuracy}%`;
+  }
   item.appendChild(snapshot);
 
   historyFeedEl.appendChild(item);
@@ -312,7 +326,7 @@ function archiveCurrentResult() {
 function finishTest() {
   pauseTimer();
   typingInputEl.disabled = true;
-  timeLeftEl.textContent = "0s";
+  refreshElapsedTime();
   calculateStats();
 }
 
@@ -326,7 +340,6 @@ function resetTest() {
   historyFeedEl.innerHTML = "";
   historyHintEl.hidden = true;
   textStreamEl.scrollTop = 0;
-  timeLeft = TEST_SECONDS;
   elapsedBeforePause = 0;
   committedTyped = 0;
   committedCorrect = 0;
@@ -336,11 +349,13 @@ function resetTest() {
   hasArchivedCurrent = false;
   completedParagraphCount = 0;
   startedAt = null;
+  lastActivityAt = null;
+  isIdlePaused = false;
 
   typingInputEl.disabled = false;
   typingInputEl.readOnly = false;
 
-  timeLeftEl.textContent = `${TEST_SECONDS}s`;
+  timeLeftEl.textContent = "0s";
   wpmEl.textContent = "0";
   cpmEl.textContent = "0";
   accuracyEl.textContent = "100%";
@@ -349,6 +364,7 @@ function resetTest() {
 }
 
 typingInputEl.addEventListener("input", (event) => {
+  recordKeyboardActivity();
   if (awaitingNextSpace) {
     event.target.value = targetText;
     return;
@@ -366,10 +382,6 @@ typingInputEl.addEventListener("input", (event) => {
     startTimer();
   }
 
-  if (timeLeft <= 0) {
-    return;
-  }
-
   const input = normalizedInput;
   updateTargetHighlight(input);
   calculateStats();
@@ -377,25 +389,27 @@ typingInputEl.addEventListener("input", (event) => {
   if (input.length >= targetText.length) {
     awaitingNextSpace = true;
     typingInputEl.readOnly = true;
-
-    if (timeLeft <= 0) {
-      finishTest();
-      return;
-    }
   }
 });
 
 typingInputEl.addEventListener("keydown", (event) => {
+  recordKeyboardActivity();
+  if (event.key === "Enter") {
+    event.preventDefault();
+    archiveCurrentResult();
+    committedTyped += currentTyped;
+    committedCorrect += currentCorrect;
+    loadNextSample();
+    calculateStats();
+    return;
+  }
+
   if (!awaitingNextSpace) {
     return;
   }
 
   if (event.key === " ") {
     event.preventDefault();
-    if (timeLeft <= 0) {
-      finishTest();
-      return;
-    }
     archiveCurrentResult();
     committedTyped += currentTyped;
     committedCorrect += currentCorrect;

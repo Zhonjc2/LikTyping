@@ -15,7 +15,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: "Noto Sans SC", sans-serif;
+  font-family: system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
   padding: 42px 16px 64px;
@@ -30,30 +30,28 @@ body {
 
 .hero {
   position: relative;
-  isolation: isolate;
+  z-index: 20;
   text-align: center;
-}
-
-.hero::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: -8px;
-  transform: translateX(-50%);
-  width: 100vw;
-  height: 122px;
-  background: rgba(255, 255, 255, 0.95);
-  filter: blur(30px);
-  z-index: -1;
-  pointer-events: none;
+  padding: 14px 18px 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(14px) saturate(135%);
+  -webkit-backdrop-filter: blur(14px) saturate(135%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
 .hero h1 {
   margin: 0;
-  font-family: system-ui, sans-serif;
-  font-size: clamp(2.8rem, 5vw, 4rem);
-  line-height: 1;
-  color: #111111;
+  line-height: 0;
+}
+
+.hero-logo {
+  display: block;
+  height: clamp(42px, 6vw, 64px);
+  width: auto;
+  max-width: min(460px, 100%);
+  margin: 0 auto;
 }
 
 .hero p {
@@ -69,7 +67,11 @@ body {
 }
 
 .text-panel {
+  position: relative;
+  z-index: 1;
   display: block;
+  margin-top: -74px;
+  padding-top: 12px;
 }
 
 .text-stream {
@@ -86,16 +88,25 @@ body {
   display: none;
 }
 
+.text-stream::before {
+  content: "";
+  display: block;
+  height: 40px;
+}
+
 .history-feed {
   display: grid;
   gap: 10px;
+  /* margin-top: 0; */
+  /* margin-bottom: 96px; */
 }
 
 .history-hint {
   margin: -2px 0 -2px;
   text-align: center;
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #8e8e8e;
 }
 
 .history-item {
@@ -103,12 +114,6 @@ body {
   border-radius: 28px;
   background: rgba(255, 255, 255, 0.4);
   padding: 14px 22px 18px;
-  opacity: 0;
-  transform: translateY(24px);
-}
-
-.history-item.show {
-  animation: history-rise 0.62s ease forwards;
 }
 
 .history-item .source-order,
@@ -122,7 +127,9 @@ body {
   border-radius: 0;
   padding: 0;
   min-height: auto;
+  margin-top: 0;
 }
+
 
 .target-text {
   border: 2px solid var(--line);
@@ -130,22 +137,19 @@ body {
   background: transparent;
   padding: 14px 22px 18px;
   min-height: 140px;
-}
-
-.target-text.enter {
-  animation: target-fade 0.5s ease;
+  margin-top: 80px;
 }
 
 .source-order {
   margin: 0;
-  font-size: 1.9rem;
+  font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.2;
 }
 
 .source-text {
   margin: 2px 0 8px;
-  font-size: 1.95rem;
+  font-size: 1.6rem;
   line-height: 1.28;
 }
 
@@ -200,7 +204,12 @@ body {
 }
 
 .pair-unit.current {
-  border-color: var(--primary);
+  border-color: #3b80f4;
+  box-shadow: 0 0 0 1px rgba(59, 128, 244, 0.18);
+}
+
+.pair-unit.current .hanzi-char {
+  color: #3b80f4;
 }
 
 .pair-unit.wrong {
@@ -230,7 +239,7 @@ textarea {
   font: inherit;
   font-size: 1.8rem;
   line-height: 1.4;
-  min-height: 88px;
+  min-height: 52px;
 }
 
 textarea:focus {
@@ -280,28 +289,6 @@ button {
   cursor: pointer;
 }
 
-@keyframes history-rise {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes target-fade {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @media (max-width: 900px) {
   .hero p {
     font-size: 1.2rem;
@@ -311,9 +298,12 @@ button {
   .source-text,
   .pinyin-char,
   .input-panel label,
-  textarea,
+  textarea {
+    font-size: 1.2rem;
+  }
+
   .history-hint {
-    font-size: 1.35rem;
+    font-size: 1.05rem;
   }
 
   .hanzi-char {
@@ -327,6 +317,24 @@ button {
   .text-stream {
     max-height: 360px;
   }
+
+  .text-stream::before {
+    height: 30px;
+  }
+
+  .text-panel {
+    margin-top: -56px;
+    padding-top: 10px;
+  }
+
+  .target-text {
+    margin-top: 64px;
+  }
+
+  .history-feed {
+    /* margin-top: 0; */
+    /* margin-bottom: 72px; */
+  }
 }
 
 @media (max-width: 560px) {
@@ -336,6 +344,24 @@ button {
 
   .app {
     gap: 12px;
+  }
+
+  .text-panel {
+    margin-top: -40px;
+    padding-top: 8px;
+  }
+
+  .target-text {
+    margin-top: 48px;
+  }
+
+  .text-stream::before {
+    height: 22px;
+  }
+
+  .history-feed {
+    /* margin-top: 0; */
+    /* margin-bottom: 56px; */
   }
 
   .target-text,
