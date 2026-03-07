@@ -174,9 +174,10 @@ body {
 
 .pinyin-char {
   margin-top: 3px;
-  font-size: 1.75rem;
+  font-size: 1.45rem;
   letter-spacing: 0.5px;
   text-transform: lowercase;
+  color: #8a8a8a;
 }
 
 .pinyin-letter {
