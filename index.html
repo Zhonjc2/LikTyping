@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>打字测试</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="hero">
+        <h1>打字测试</h1>
+        <p>完成一段后按一次空格切换到下一段，向上滚动可查看历史记录</p>
+      </header>
+
+      <section class="panel text-panel">
+        <div id="textStream" class="text-stream">
+          <div id="historyFeed" class="history-feed" aria-live="polite"></div>
+          <p id="historyHint" class="history-hint" hidden>历史记录↑</p>
+          <div id="targetText" class="target-text" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="panel input-panel">
+        <label for="typingInput">开始输入：</label>
+        <textarea
+          id="typingInput"
+          rows="5"
+          placeholder="请输入拼音（小写，标点会自动转为空格）..."
+          spellcheck="false"
+        ></textarea>
+      </section>
+
+      <section class="stats" aria-live="polite">
+        <article class="stat-card">
+          <span>剩余时间</span>
+          <strong id="timeLeft">60s</strong>
+        </article>
+        <article class="stat-card">
+          <span>速度 (WPM)</span>
+          <strong id="wpm">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>速度 (CPM)</span>
+          <strong id="cpm">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>准确率</span>
+          <strong id="accuracy">100%</strong>
+        </article>
+      </section>
+
+      <section class="actions">
+        <button id="restartBtn" type="button">重新开始</button>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
