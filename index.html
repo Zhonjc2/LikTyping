@@ -12,46 +12,50 @@
         <h1><img class="hero-logo" src="./LikTyping.svg" alt="LikTyping" /></h1>
       </header>
 
-      <section class="panel text-panel">
-        <div id="textStream" class="text-stream">
-          <div id="historyFeed" class="history-feed" aria-live="polite"></div>
-          <p id="historyHint" class="history-hint" hidden>历史记录↑</p>
-          <div id="targetText" class="target-text" aria-live="polite"></div>
-        </div>
-      </section>
+      <div class="main-column">
+        <section class="panel text-panel">
+          <div id="textStream" class="text-stream">
+            <div id="historyFeed" class="history-feed" aria-live="polite"></div>
+            <p id="historyHint" class="history-hint" hidden>历史记录↑</p>
+            <div id="targetText" class="target-text" aria-live="polite"></div>
+          </div>
+        </section>
 
-      <section class="panel input-panel">
-        <label for="typingInput">开始输入：</label>
-        <textarea
-          id="typingInput"
-          rows="3"
-          placeholder="请输入拼音（小写，标点会自动转为空格）..."
-          spellcheck="false"
-        ></textarea>
-      </section>
+        <section class="panel input-panel">
+          <label for="typingInput">开始输入：</label>
+          <textarea
+            id="typingInput"
+            rows="3"
+            placeholder="请输入拼音（小写，标点会自动转为空格）..."
+            spellcheck="false"
+          ></textarea>
+        </section>
+      </div>
 
-      <section class="stats" aria-live="polite">
-        <article class="stat-card">
-          <span>已用时间</span>
-          <strong id="timeLeft">0s</strong>
-        </article>
-        <article class="stat-card">
-          <span>速度 (WPM)</span>
-          <strong id="wpm">0</strong>
-        </article>
-        <article class="stat-card">
-          <span>速度 (CPM)</span>
-          <strong id="cpm">0</strong>
-        </article>
-        <article class="stat-card">
-          <span>准确率</span>
-          <strong id="accuracy">100%</strong>
-        </article>
-      </section>
+      <aside class="side-column">
+        <section class="stats" aria-live="polite">
+          <article class="stat-card">
+            <span>已用时间</span>
+            <strong id="timeLeft">0s</strong>
+          </article>
+          <article class="stat-card">
+            <span>速度 (WPM)</span>
+            <strong id="wpm">0</strong>
+          </article>
+          <article class="stat-card">
+            <span>速度 (CPM)</span>
+            <strong id="cpm">0</strong>
+          </article>
+          <article class="stat-card">
+            <span>准确率</span>
+            <strong id="accuracy">100%</strong>
+          </article>
+        </section>
 
-      <section class="actions">
-        <button id="restartBtn" type="button">重新开始</button>
-      </section>
+        <section class="actions">
+          <button id="restartBtn" type="button">重新开始</button>
+        </section>
+      </aside>
     </main>
 
     <script src="./app.js"></script>
