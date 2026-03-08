@@ -10,6 +10,10 @@ const timeLeftEl = document.getElementById("timeLeft");
 const wpmEl = document.getElementById("wpm");
 const cpmEl = document.getElementById("cpm");
 const accuracyEl = document.getElementById("accuracy");
+const keystrokesEl = document.getElementById("keystrokes");
+const streakBoardEl = document.getElementById("streakBoard");
+const streakCountEl = document.getElementById("streakCount");
+const streakRankEl = document.getElementById("streakRank");
 const restartBtnEl = document.getElementById("restartBtn");
 
 let targetText = "";
@@ -23,11 +27,14 @@ let committedTyped = 0;
 let committedCorrect = 0;
 let currentTyped = 0;
 let currentCorrect = 0;
-let awaitingNextSpace = false;
 let hasArchivedCurrent = false;
 let completedParagraphCount = 0;
 let lastActivityAt = null;
 let isIdlePaused = false;
+let totalKeystrokes = 0;
+let currentStreak = 0;
+let lastInputValueForStreak = "";
+let currentRankScore = 0;
 
 function renderStatusText(message) {
   targetTextEl.innerHTML = "";
@@ -89,6 +96,28 @@ function countCorrectChars(input, expected) {
     }
   }
   return correct;
+}
+
+function countPinyinLetterStats(input, expectedTokens) {
+  const typedTokens = input.trim() ? input.trim().split(" ") : [];
+  let typedLetters = 0;
+  let correctLetters = 0;
+
+  typedTokens.forEach((typedToken, tokenIndex) => {
+    const expectedToken = expectedTokens[tokenIndex] ?? "";
+    typedLetters += typedToken.length;
+    const compareLength = Math.min(typedToken.length, expectedToken.length);
+    for (let letterIndex = 0; letterIndex < compareLength; letterIndex += 1) {
+      if (typedToken[letterIndex] === expectedToken[letterIndex]) {
+        correctLetters += 1;
+      }
+    }
+  });
+
+  return {
+    typedLetterCount: typedLetters,
+    correctLetterCount: correctLetters
+  };
 }
 
 function pickText() {
@@ -203,7 +232,7 @@ function calculateStats() {
 
   const cpm = Math.round(totalCorrect / elapsedMinutes);
   const wpm = Math.round(totalCorrect / 5 / elapsedMinutes);
-  const accuracy = totalTyped === 0 ? 100 : Math.round((totalCorrect / totalTyped) * 100);
+  const accuracy = totalTyped === 0 ? 0 : Math.round((totalCorrect / totalTyped) * 100);
 
   cpmEl.textContent = Number.isFinite(cpm) ? cpm : 0;
   wpmEl.textContent = Number.isFinite(wpm) ? wpm : 0;
@@ -218,6 +247,109 @@ function recordKeyboardActivity() {
   }
 }
 
+function isCountedKeystroke(event) {
+  if (event.metaKey || event.ctrlKey || event.altKey) {
+    return false;
+  }
+  return event.key.length === 1 || event.key === "Backspace" || event.key === "Delete" || event.key === "Enter";
+}
+
+function getStreakRank(streak) {
+  if (streak >= 1000) return "SSS";
+  if (streak >= 500) return "SS";
+  if (streak >= 100) return "S";
+  if (streak >= 50) return "A";
+  if (streak >= 10) return "B";
+  if (streak >= 1) return "C";
+  return "X";
+}
+
+function getRankScore(rank) {
+  if (rank === "C") return 1;
+  if (rank === "B") return 2;
+  if (rank === "A") return 3;
+  if (rank === "S") return 4;
+  if (rank === "SS") return 5;
+  if (rank === "SSS") return 6;
+  return 0;
+}
+
+function updateStreakDisplay() {
+  const rank = getStreakRank(currentStreak);
+  const nextRankScore = getRankScore(rank);
+  const streakText = String(currentStreak);
+  streakCountEl.textContent = streakText;
+  streakBoardEl.dataset.digits = String(streakText.length);
+  streakRankEl.textContent = rank;
+  streakBoardEl.classList.remove("rank-x", "rank-c", "rank-b", "rank-a", "rank-s", "rank-ss", "rank-sss");
+  streakBoardEl.classList.add(`rank-${rank.toLowerCase()}`);
+  if (nextRankScore > currentRankScore) {
+    streakBoardEl.classList.remove("rank-up-pop");
+    // force reflow so animation can replay on each rank-up
+    void streakBoardEl.offsetWidth;
+    streakBoardEl.classList.add("rank-up-pop");
+  }
+  currentRankScore = nextRankScore;
+}
+
+function getExpectedNextChar(input) {
+  const hasTrailingSpace = input.endsWith(" ");
+  const typedTokens = input.trim() ? input.trim().split(" ") : [];
+
+  if (typedTokens.length === 0) {
+    return pinyinUnits[0]?.[0] ?? null;
+  }
+
+  if (hasTrailingSpace) {
+    const nextToken = pinyinUnits[typedTokens.length];
+    return nextToken?.[0] ?? null;
+  }
+
+  const currentTokenIndex = typedTokens.length - 1;
+  const currentTypedToken = typedTokens[currentTokenIndex] ?? "";
+  const expectedToken = pinyinUnits[currentTokenIndex] ?? "";
+  const nextLetterIndex = currentTypedToken.length;
+
+  if (nextLetterIndex < expectedToken.length) {
+    return expectedToken[nextLetterIndex];
+  }
+
+  if (nextLetterIndex === expectedToken.length && currentTokenIndex < pinyinUnits.length - 1) {
+    return " ";
+  }
+
+  if (currentTokenIndex === pinyinUnits.length - 1 && nextLetterIndex >= expectedToken.length) {
+    return " ";
+  }
+
+  return null;
+}
+
+function handleStreakOnInput(previousInput, nextInput) {
+  if (nextInput === previousInput) {
+    return;
+  }
+
+  if (previousInput.startsWith(nextInput) && previousInput.length === nextInput.length + 1) {
+    return;
+  }
+
+  if (nextInput.startsWith(previousInput) && nextInput.length === previousInput.length + 1) {
+    const typedChar = nextInput[nextInput.length - 1];
+    const expectedChar = getExpectedNextChar(previousInput);
+    if (expectedChar != null && typedChar === expectedChar) {
+      currentStreak += 1;
+    } else {
+      currentStreak = 0;
+    }
+    updateStreakDisplay();
+    return;
+  }
+
+  currentStreak = 0;
+  updateStreakDisplay();
+}
+
 function updateTargetHighlight(input) {
   const units = targetTextEl.querySelectorAll(".pair-unit");
   const typedTokens = input.trim() ? input.trim().split(" ") : [];
@@ -225,8 +357,9 @@ function updateTargetHighlight(input) {
   const currentUnitIndex =
     typedTokens.length === 0 ? 0 : hasTrailingSpace ? typedTokens.length : typedTokens.length - 1;
 
-  currentTyped = input.length;
-  currentCorrect = countCorrectChars(input, targetText);
+  const letterStats = countPinyinLetterStats(input, pinyinUnits);
+  currentTyped = letterStats.typedLetterCount;
+  currentCorrect = letterStats.correctLetterCount;
 
   units.forEach((unitEl, index) => {
     unitEl.classList.remove("correct", "wrong", "current");
@@ -274,6 +407,20 @@ function updateTargetHighlight(input) {
   });
 }
 
+function isReadyToFinishBySpace(input) {
+  const trimmedInput = input.trim();
+  if (!trimmedInput) {
+    return false;
+  }
+  const typedTokens = trimmedInput.split(" ");
+  if (typedTokens.length !== pinyinUnits.length) {
+    return false;
+  }
+  const lastTypedToken = typedTokens[typedTokens.length - 1] ?? "";
+  const lastExpectedToken = pinyinUnits[pinyinUnits.length - 1] ?? "";
+  return lastTypedToken.length >= lastExpectedToken.length;
+}
+
 function loadNextSample() {
   const parsedSample = parseSample(pickText());
   sourceText = parsedSample.sourceText;
@@ -281,13 +428,11 @@ function loadNextSample() {
   pinyinUnits = parsedSample.pinyinUnits;
   targetText = pinyinUnits.join(" ");
   typingInputEl.value = "";
-  typingInputEl.maxLength = targetText.length;
-  typingInputEl.setAttribute("maxlength", String(targetText.length));
   typingInputEl.readOnly = false;
-  awaitingNextSpace = false;
   hasArchivedCurrent = false;
   currentTyped = 0;
   currentCorrect = 0;
+  lastInputValueForStreak = "";
   renderTarget();
   requestAnimationFrame(() => {
     textStreamEl.scrollTop = textStreamEl.scrollHeight;
@@ -306,7 +451,7 @@ function archiveCurrentResult() {
   const snapshot = targetTextEl.cloneNode(true);
   snapshot.classList.remove("enter");
   snapshot.querySelectorAll(".current").forEach((el) => el.classList.remove("current"));
-  const paragraphAccuracy = currentTyped === 0 ? 100 : Math.round((currentCorrect / currentTyped) * 100);
+  const paragraphAccuracy = currentTyped === 0 ? 0 : Math.round((currentCorrect / currentTyped) * 100);
   const clampedParagraphAccuracy = Math.max(0, Math.min(100, paragraphAccuracy));
   const orderLine = snapshot.querySelector(".source-order");
   if (orderLine) {
@@ -345,7 +490,6 @@ function resetTest() {
   committedCorrect = 0;
   currentTyped = 0;
   currentCorrect = 0;
-  awaitingNextSpace = false;
   hasArchivedCurrent = false;
   completedParagraphCount = 0;
   startedAt = null;
@@ -358,22 +502,20 @@ function resetTest() {
   timeLeftEl.textContent = "0s";
   wpmEl.textContent = "0";
   cpmEl.textContent = "0";
-  accuracyEl.textContent = "100%";
+  accuracyEl.textContent = "0%";
+  keystrokesEl.textContent = "0";
+  totalKeystrokes = 0;
+  currentStreak = 0;
+  currentRankScore = 0;
+  lastInputValueForStreak = "";
+  updateStreakDisplay();
 
   typingInputEl.focus();
 }
 
 typingInputEl.addEventListener("input", (event) => {
   recordKeyboardActivity();
-  if (awaitingNextSpace) {
-    event.target.value = targetText;
-    return;
-  }
-
   let normalizedInput = normalizeInputPinyin(event.target.value);
-  if (normalizedInput.length > targetText.length) {
-    normalizedInput = normalizedInput.slice(0, targetText.length);
-  }
   if (event.target.value !== normalizedInput) {
     event.target.value = normalizedInput;
   }
@@ -383,17 +525,18 @@ typingInputEl.addEventListener("input", (event) => {
   }
 
   const input = normalizedInput;
+  handleStreakOnInput(lastInputValueForStreak, input);
+  lastInputValueForStreak = input;
   updateTargetHighlight(input);
   calculateStats();
-
-  if (input.length >= targetText.length) {
-    awaitingNextSpace = true;
-    typingInputEl.readOnly = true;
-  }
 });
 
 typingInputEl.addEventListener("keydown", (event) => {
   recordKeyboardActivity();
+  if (isCountedKeystroke(event)) {
+    totalKeystrokes += 1;
+    keystrokesEl.textContent = String(totalKeystrokes);
+  }
   if (event.key === "Enter") {
     event.preventDefault();
     archiveCurrentResult();
@@ -404,22 +547,19 @@ typingInputEl.addEventListener("keydown", (event) => {
     return;
   }
 
-  if (!awaitingNextSpace) {
-    return;
-  }
-
-  if (event.key === " ") {
+  if (event.key === " " && isReadyToFinishBySpace(typingInputEl.value)) {
     event.preventDefault();
+    const expectedChar = getExpectedNextChar(typingInputEl.value);
+    if (expectedChar === " ") {
+      currentStreak += 1;
+      updateStreakDisplay();
+    }
     archiveCurrentResult();
     committedTyped += currentTyped;
     committedCorrect += currentCorrect;
     loadNextSample();
     calculateStats();
     return;
-  }
-
-  if (event.key.length === 1) {
-    event.preventDefault();
   }
 });
 

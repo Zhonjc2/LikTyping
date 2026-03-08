@@ -33,6 +33,12 @@
       </div>
 
       <aside class="side-column">
+        <section id="streakBoard" class="streak-board rank-x" aria-live="polite">
+          <strong id="streakCount">0</strong>
+          <span id="streakRank">X</span>
+          <div class="streak-glow" aria-hidden="true"></div>
+        </section>
+
         <section class="stats" aria-live="polite">
           <article class="stat-card">
             <span>已用时间</span>
@@ -48,7 +54,11 @@
           </article>
           <article class="stat-card">
             <span>准确率</span>
-            <strong id="accuracy">100%</strong>
+            <strong id="accuracy">0%</strong>
+          </article>
+          <article class="stat-card">
+            <span>总敲打次数</span>
+            <strong id="keystrokes">0</strong>
           </article>
         </section>
 
