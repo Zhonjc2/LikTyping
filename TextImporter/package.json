@@ -1,0 +1,13 @@
+{
+  "name": "text-importer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "import": "node importer.mjs"
+  },
+  "dependencies": {
+    "mammoth": "^1.9.1",
+    "nodejieba": "^3.5.2",
+    "pinyin-pro": "^3.26.0"
+  }
+}

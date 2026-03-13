@@ -35,6 +35,7 @@ let totalKeystrokes = 0;
 let currentStreak = 0;
 let lastInputValueForStreak = "";
 let currentRankScore = 0;
+let lastSampleIndex = -1;
 
 function renderStatusText(message) {
   targetTextEl.innerHTML = "";
@@ -124,7 +125,13 @@ function pickText() {
   if (samples.length === 0) {
     throw new Error("题库未加载");
   }
-  const idx = Math.floor(Math.random() * samples.length);
+
+  let idx = Math.floor(Math.random() * samples.length);
+  if (samples.length > 1 && idx === lastSampleIndex) {
+    idx = (idx + 1 + Math.floor(Math.random() * (samples.length - 1))) % samples.length;
+  }
+
+  lastSampleIndex = idx;
   return samples[idx];
 }
 
@@ -292,6 +299,28 @@ function updateStreakDisplay() {
   currentRankScore = nextRankScore;
 }
 
+function syncTextStreamToCurrentUnit(currentUnitIndex, force = false) {
+  const currentUnit = targetTextEl.querySelector(`.pair-unit[data-unit-index="${currentUnitIndex}"]`);
+  if (!currentUnit) {
+    return;
+  }
+
+  const streamRect = textStreamEl.getBoundingClientRect();
+  const unitRect = currentUnit.getBoundingClientRect();
+  const unitCenter =
+    textStreamEl.scrollTop + (unitRect.top - streamRect.top) + unitRect.height / 2;
+  const targetScrollTop = unitCenter - textStreamEl.clientHeight / 2;
+  const maxScrollTop = Math.max(0, textStreamEl.scrollHeight - textStreamEl.clientHeight);
+  const nextScrollTop = Math.max(0, Math.min(targetScrollTop, maxScrollTop));
+  const delta = Math.abs(textStreamEl.scrollTop - nextScrollTop);
+
+  if (!force && delta < 1) {
+    return;
+  }
+
+  textStreamEl.scrollTo({ top: nextScrollTop, behavior: "auto" });
+}
+
 function getExpectedNextChar(input) {
   const hasTrailingSpace = input.endsWith(" ");
   const typedTokens = input.trim() ? input.trim().split(" ") : [];
@@ -405,6 +434,10 @@ function updateTargetHighlight(input) {
       }
     }
   });
+
+  requestAnimationFrame(() => {
+    syncTextStreamToCurrentUnit(currentUnitIndex);
+  });
 }
 
 function isReadyToFinishBySpace(input) {
@@ -436,6 +469,7 @@ function loadNextSample() {
   renderTarget();
   requestAnimationFrame(() => {
     textStreamEl.scrollTop = textStreamEl.scrollHeight;
+    syncTextStreamToCurrentUnit(0, true);
   });
 }
 

@@ -3,17 +3,66 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>打字测试</title>
+    <title>LikTyping - 中文拼音打字练习网站</title>
+    <meta
+      name="description"
+      content="LikTyping 是一个中文拼音打字练习网站，支持按词显示汉字与拼音、实时统计速度与准确率，适合日常打字训练与中文输入法练习。"
+    />
+    <meta
+      name="keywords"
+      content="LikTyping,中文打字练习,拼音打字,打字测试,中文输入法练习,拼音练习,打字速度测试"
+    />
+    <meta name="author" content="Zhonjc" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://liktyping.zhonjc.cn/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:site_name" content="LikTyping" />
+    <meta property="og:title" content="LikTyping - 中文拼音打字练习网站" />
+    <meta
+      property="og:description"
+      content="练习中文拼音输入，按词查看汉字和拼音，实时查看 WPM、CPM、准确率与击键数。"
+    />
+    <meta property="og:url" content="https://liktyping.zhonjc.cn/" />
+    <meta property="og:image" content="https://liktyping.zhonjc.cn/LikTyping.svg" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="LikTyping - 中文拼音打字练习网站" />
+    <meta
+      name="twitter:description"
+      content="一个专注中文拼音输入训练的轻量 Web 应用，支持实时速度与准确率统计。"
+    />
+    <meta name="twitter:image" content="https://liktyping.zhonjc.cn/LikTyping.svg" />
     <link rel="stylesheet" href="./styles.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "LikTyping",
+        "url": "https://liktyping.zhonjc.cn/",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web",
+        "inLanguage": "zh-CN",
+        "description": "一个中文拼音打字练习网站，支持按词显示汉字与拼音，并实时统计速度、准确率和击键数据。",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "CNY"
+        }
+      }
+    </script>
   </head>
   <body>
     <main class="app">
       <header class="hero">
         <h1><img class="hero-logo" src="./LikTyping.svg" alt="LikTyping" /></h1>
+        <p class="visually-hidden">
+          LikTyping 是一个中文拼音打字练习网站，提供中文打字测试、拼音输入训练、速度统计与准确率反馈。
+        </p>
       </header>
 
       <div class="main-column">
         <section class="panel text-panel">
+          <h2 class="visually-hidden">中文拼音打字练习区</h2>
           <div id="textStream" class="text-stream">
             <div id="historyFeed" class="history-feed" aria-live="polite"></div>
             <p id="historyHint" class="history-hint" hidden>历史记录↑</p>
@@ -22,6 +71,7 @@
         </section>
 
         <section class="panel input-panel">
+          <h2 class="visually-hidden">拼音输入区</h2>
           <label for="typingInput">开始输入：</label>
           <textarea
             id="typingInput"
@@ -33,6 +83,7 @@
       </div>
 
       <aside class="side-column">
+        <h2 class="visually-hidden">打字统计信息</h2>
         <section id="streakBoard" class="streak-board rank-x" aria-live="polite">
           <strong id="streakCount">0</strong>
           <span id="streakRank">X</span>
@@ -69,5 +120,6 @@
     </main>
 
     <script src="./app.js"></script>
+    <noscript>LikTyping 需要启用 JavaScript 才能加载中文打字练习内容和实时统计功能。</noscript>
   </body>
 </html>

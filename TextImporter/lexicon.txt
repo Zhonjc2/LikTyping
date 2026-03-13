@@ -1,0 +1,13 @@
+# One phrase per line.
+# These phrases will be merged after auto segmentation.
+# Useful for product names, technical terms, proper nouns, and fixed expressions.
+
+机器学习
+深度学习
+神经网络
+强化学习
+提示工程
+上下文窗口
+大语言模型
+文本段落
+打字素材
